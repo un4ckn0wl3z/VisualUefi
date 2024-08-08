@@ -69,6 +69,29 @@ UefiUnload (
 }
 
 EFI_STATUS
+WaitForKeyStroke(
+    OUT  EFI_INPUT_KEY* Key
+)
+{
+    EFI_STATUS  Status;
+    UINTN       Index;
+
+    while (TRUE) {
+        Status = gST->ConIn->ReadKeyStroke(gST->ConIn, Key);
+        if (!EFI_ERROR(Status)) {
+            break;
+        }
+
+        if (Status != EFI_NOT_READY) {
+            continue;
+        }
+
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+    }
+    return Status;
+}
+
+EFI_STATUS
 EFIAPI
 UefiMain (
     IN EFI_HANDLE ImageHandle,
@@ -81,11 +104,24 @@ UefiMain (
     UINTN readSize;
     EFI_SAMPLE_DRIVER_PROTOCOL* sampleProtocol;
 
+    Print(L"Press any key to continue...\n");
+    EFI_INPUT_KEY keyInput;
+    efiStatus = WaitForKeyStroke(&keyInput);
+    if (EFI_ERROR(efiStatus))
+    {
+        Print(L"Failed to get keystroke: %lx\n", efiStatus);
+        goto Exit;
+    }
+
     // 
     // Print stuff out 
     // 
+
+    Print(L"Hello World UEFI Application and Driver [https://eavesdropper.dev]\n");
+    Print(L"Developer: [un4ckn0wl3z]\n\n");
+
     fileHandle = NULL;
-    Print(L"Hello World! My handle is %lx and System Table is at %p\n",
+    Print(L"My handle is %lx and System Table is at %p\n",
           ImageHandle, SystemTable);
 
     //
